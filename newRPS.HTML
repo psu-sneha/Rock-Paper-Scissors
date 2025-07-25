@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rock Paper Scissors Game</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(to bottom, #d0e7ff, #d4c2f2);
+      text-align: center;
+      padding: 30px;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      color: #333;
+    }
+
+    .choices {
+      margin: 20px 0 40px 0;
+    }
+
+    .choices button {
+      font-size: 3.5rem;
+      width: 100px;
+      height: 100px;
+      margin: 15px;
+      cursor: pointer;
+      border-radius: 50%;
+      border: none;
+      position: relative;
+      transition: transform 0.3s ease, box-shadow 0.3s;
+      animation: pulse 2s infinite;
+    }
+
+    .choices button:hover {
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      transform: scale(1.1);
+    }
+
+    .choices button::after {
+      content: attr(data-label);
+      position: absolute;
+      bottom: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.4em;  /* smaller label */
+	  color: SlateGray;       /* label color changed */
+
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .choices button:hover::after {
+      opacity: 1;
+    }
+
+    .choices button.rock { background-color: #79a3f0; color: white; }
+    .choices button.paper { background-color: #4ecdc4; color: white; }
+    .choices button.scissors { background-color: #f78fb3; color: white; }
+
+    .display {
+      display: flex;
+      justify-content: center;
+      gap: 50px;
+      margin-top: 20px;
+      font-size: 2.5em;
+    }
+
+    .result {
+      font-weight: bold;
+      color: #2d3436;
+      margin-bottom: 20px;
+      font-size: 1.3em;
+    }
+
+    .reset-button {
+      margin-top: 40px;
+      padding: 10px 25px;
+      font-size: 1em;
+      background-color: #79a3f0;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .reset-button:hover {
+      background-color: #333;
+    }
+
+    .final-message {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      /*background-color: rgba(255, 255, 255, 0.95);*/
+	  background: linear-gradient(to bottom, #d0e7ff, #d4c2f2);
+      color: #333;
+      font-size: 2em;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 999;
+    }
+
+    .final-message span {
+      font-size: 3rem;
+      animation: bounce 1s infinite;
+    }
+
+    .final-message button {
+      margin-top: 20px;
+      font-size: 1em;
+      padding: 10px 25px;
+      background-color: #4ecdc4;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .final-message button:hover {
+      background-color: #3abab1;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    #infoBox {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      font-size: 0.9em;
+      max-width: 250px;
+      z-index: 10;
+      display: none;
+    }
+
+    #infoButton {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #4ecdc4;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 1.5em;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Let's Play ✊ ✋ ✌️</h1>
+
+  <div class="choices" id="buttonArea">
+    <button class="rock" data-label="Rock" onclick="play('rock')">✊</button>
+    <button class="paper" data-label="Paper" onclick="play('paper')">✋</button>
+    <button class="scissors" data-label="Scissors" onclick="play('scissors')">✌️</button>
+  </div>
+
+  <div class="display-area">
+    <div class="result" id="result">Make your choice!</div>
+  </div>
+
+  <div class="display">
+    <div><strong>You:</strong> <span id="userChoice"> 💡 </span></div>
+    <div><strong>Computer:</strong> <span id="computerChoice"> 💡 </span></div>
+  </div>
+			<h2 id="historyLabel" style="display: none;">Game History</h2>
+
+			<table id="resultTable" border="1" style="margin: auto; border-collapse: collapse; font-size: 1em; margin-top: 20px;">
+			<tbody>
+						<!-- Header + rows will be inserted dynamically -->
+			</tbody>
+			</table>
+
+
+  <button class="reset-button" onclick="resetGame()">🔄 Reset Game</button>
+
+  <div class="final-message" id="finalMessage">
+    <div id="finalText"></div>
+    <span id="finalEmoji"></span>
+    <button onclick="restartGame()">🕹️ Play Again</button>
+  </div>
+
+  <button id="infoButton" onmouseover="showInfoBox()">❓</button>
+  <div id="infoBox">Click a choice to play. Game ends after 5 rounds. Highest scorer wins!</div>
+
+  <audio id="clickSound" src="https://www.soundjay.com/buttons/button-29.mp3"></audio>
+  <audio id="bgMusic" src="https://www.bensound.com/bensound-music/bensound-ukulele.mp3" loop autoplay></audio>
+
+  <script>
+    let userScore = 0;
+    let compScore = 0;
+    let roundsPlayed = 0;
+
+    function play(userChoice) {
+      document.getElementById("clickSound").play();
+      const choices = ["rock", "paper", "scissors"];
+      const emojis = { rock: "✊", paper: "✋", scissors: "✌️" };
+
+      const computerChoice = choices[Math.floor(Math.random() * 3)];
+      document.getElementById("userChoice").textContent = emojis[userChoice];
+      document.getElementById("computerChoice").textContent = emojis[computerChoice];
+
+      const result = getResult(userChoice, computerChoice);
+      const resultDiv = document.getElementById("result");
+      resultDiv.textContent = result;
+	  
+			const resultTable = document.getElementById("resultTable").getElementsByTagName("tbody")[0];
+
+						// If it's the first round, insert header row first
+						if (roundsPlayed === 0) {
+						  const headerRow = resultTable.insertRow();
+						  headerRow.style.backgroundColor = "#eee";
+						  headerRow.innerHTML = `
+							<th>Round</th>
+							<th>Your Choice</th>
+							<th>Computer's Choice</th>
+							<th>Result</th>
+					`;
+												}
+
+						// Insert new round record
+						const newRow = resultTable.insertRow();
+						newRow.innerHTML = `
+						  <td>${roundsPlayed + 1}</td>
+						<td>${emojis[userChoice]}</td>
+						<td>${emojis[computerChoice]}</td>
+						<td>${result}</td>
+
+						`;
+
+      if (result.includes("Win")) userScore++;
+      else if (result.includes("Lose")) compScore++;
+
+      roundsPlayed++;
+      if (roundsPlayed >= 5) {
+        showFinalResult();
+      }
+    }
+
+    function getResult(user, comp) {
+      if (user === comp) return "🤝 It's a Draw!";
+      if (
+        (user === "rock" && comp === "scissors") ||
+        (user === "scissors" && comp === "paper") ||
+        (user === "paper" && comp === "rock")
+      ) return "🎉 You Win!";
+      return "😞 You Lose!";
+    }
+
+    function resetGame() {
+      userScore = 0;
+      compScore = 0;
+      roundsPlayed = 0;
+      document.getElementById("userChoice").textContent = " 💡 ";
+      document.getElementById("computerChoice").textContent = " 💡 ";
+      document.getElementById("result").textContent = "Make your choice!";
+	  document.getElementById("resultTable").getElementsByTagName("tbody")[0].innerHTML = "";
+
+    }
+
+    function showFinalResult() {
+      document.getElementById("buttonArea").style.display = "none";
+      document.querySelector(".reset-button").style.display = "none";
+      const finalBox = document.getElementById("finalMessage");
+      const finalText = document.getElementById("finalText");
+      const finalEmoji = document.getElementById("finalEmoji");
+      finalBox.style.display = "flex";
+
+      if (userScore > compScore) {
+        finalText.textContent = "🏆 You are the Winner!";
+        finalEmoji.textContent = "🎉 🏆 🎉";
+      } else if (userScore < compScore) {
+        finalText.textContent = "😢 You Lost the Game!";
+        finalEmoji.textContent = "😢💔😢";
+      } else {
+        finalText.textContent = "⚖️ It's a Tie!";
+        finalEmoji.textContent = "🤝";
+      }
+    }
+
+    function restartGame() {
+      document.getElementById("finalMessage").style.display = "none";
+      document.getElementById("buttonArea").style.display = "block";
+      document.querySelector(".reset-button").style.display = "inline-block";
+      resetGame();
+    }
+
+    function showInfoBox() {
+      document.getElementById("infoBox").style.display = "block";
+    }
+
+    document.addEventListener("click", (e) => {
+      const infoBox = document.getElementById("infoBox");
+      if (!e.target.matches("#infoButton")) {
+        infoBox.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
