@@ -1,0 +1,16 @@
+{
+  "name": "Rock Paper Scissors",
+  "short_name": "RPS Game",
+  "start_url": "/Rock-Paper-Scissors/",
+  "display": "standalone",
+  "background_color": "#d0e7ff",
+  "theme_color": "#d4c2f2",
+  "description": "Play the classic Rock Paper Scissors game with emoji fun!",
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
