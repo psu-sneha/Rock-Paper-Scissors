@@ -19,10 +19,6 @@
       color: #333;
     }
 
-    .choices {
-      margin: 20px 0 40px 0;
-    }
-
     .choices button {
       font-size: 3.5rem;
       width: 100px;
@@ -35,125 +31,13 @@
       transition: transform 0.3s ease, box-shadow 0.3s;
       animation: pulse 2s infinite;
     }
-
-    .choices button:hover {
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-      transform: scale(1.1);
-    }
-
-    .choices button::after {
-      content: attr(data-label);
-      position: absolute;
-      bottom: -30px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 0.4em;  /* smaller label */
-	  color: SlateGray;       /* label color changed */
-
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .choices button:hover::after {
-      opacity: 1;
-    }
-
+    .choices button:hover { transform: scale(1.1); }
     .choices button.rock { background-color: #79a3f0; color: white; }
     .choices button.paper { background-color: #4ecdc4; color: white; }
     .choices button.scissors { background-color: #f78fb3; color: white; }
 
-    .display {
-      display: flex;
-      justify-content: center;
-      gap: 50px;
-      margin-top: 20px;
-      font-size: 2.5em;
-    }
-
-    .result {
-      font-weight: bold;
-      color: #2d3436;
-      margin-bottom: 20px;
-      font-size: 1.3em;
-    }
-
-    .reset-button {
-      margin-top: 40px;
-      padding: 10px 25px;
-      font-size: 1em;
-      background-color: #79a3f0;
-      border: none;
-      border-radius: 8px;
-      color: white;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
-    .reset-button:hover {
-      background-color: #333;
-    }
-
-    .final-message {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      /*background-color: rgba(255, 255, 255, 0.95);*/
-	  background: linear-gradient(to bottom, #d0e7ff, #d4c2f2);
-      color: #333;
-      font-size: 2em;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      z-index: 999;
-    }
-
-    .final-message span {
-      font-size: 3rem;
-      animation: bounce 1s infinite;
-    }
-
-    .final-message button {
-      margin-top: 20px;
-      font-size: 1em;
-      padding: 10px 25px;
-      background-color: #4ecdc4;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .final-message button:hover {
-      background-color: #3abab1;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-
-    #infoBox {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background-color: #fff;
-      border-radius: 10px;
-      padding: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      font-size: 0.9em;
-      max-width: 250px;
-      z-index: 10;
-      display: none;
-    }
+    .display { display: flex; justify-content: center; gap: 50px; margin-top: 20px; font-size: 2.5em; }
+    .result { font-weight: bold; margin-bottom: 20px; font-size: 1.3em; }
 
     #infoButton {
       position: absolute;
@@ -163,162 +47,349 @@
       color: white;
       border: none;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      width: 40px; height: 40px;
       font-size: 1.5em;
       cursor: pointer;
+    }
+    #infoBox {
+      position: absolute;
+      top: 60px; right: 10px;
+      background: #fff; padding: 10px; border-radius: 10px;
+      display: none; width: 250px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
   </style>
 </head>
 <body>
+
+  <!-- Top left: Single / Multi buttons -->
+  <div style="position: absolute; top: 10px; left: 10px;">
+    <button onclick="openModePopup('single')">Single Player</button>
+    <button onclick="openModePopup('multi')">Two Player</button>
+  </div>
+
+  <!-- Info button -->
+  <button id="infoButton" onmouseover="showInfoBox()">❓</button>
+  <div id="infoBox">Click a choice to play. In multiplayer, create or join a room with your friend!</div>
+  <!-- Final Result Popup -->
+<div id="finalResultPopup"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:99999;">
+  <div style="background:white; padding:20px; border-radius:12px; width:320px; text-align:center;">
+    <h2>Game Over</h2>
+    <p id="finalResultText" style="margin:15px 0; font-size:1.2em;"></p>
+    <button onclick="resetGame()"
+            style="padding:10px 20px; font-size:1em; border:none; border-radius:8px; background:#4ecdc4; color:white; cursor:pointer;">
+      🔄 Play Again
+    </button>
+  </div>
+</div>
+
+  
+  <script>
+function showFinalResult() {
+  let finalMsg = "";
+  if (userScore > compScore) {
+    finalMsg = `🎉 You Win 🏆\n\nFinal Score → You: ${userScore} | Opponent: ${compScore}`;
+  } else if (compScore > userScore) {
+    finalMsg = `😢 You Lose ❌\n\nFinal Score → You: ${userScore} | Opponent: ${compScore}`;
+  } else {
+    finalMsg = `🤝 It's a Draw!\n\nFinal Score → You: ${userScore} | Opponent: ${compScore}`;
+  }
+
+  // Fill popup text
+  document.getElementById("finalResultText").textContent = finalMsg;
+  // Show popup
+  document.getElementById("finalResultPopup").style.display = "flex";
+}
+</script>
+
+
+
   <h1>Let's Play ✊ ✋ ✌️</h1>
 
+  <!-- Game Buttons -->
   <div class="choices" id="buttonArea">
-    <button class="rock" data-label="Rock" onclick="play('rock')">✊</button>
-    <button class="paper" data-label="Paper" onclick="play('paper')">✋</button>
-    <button class="scissors" data-label="Scissors" onclick="play('scissors')">✌️</button>
+    <button class="rock" onclick="play('rock')">✊</button>
+    <button class="paper" onclick="play('paper')">✋</button>
+    <button class="scissors" onclick="play('scissors')">✌️</button>
   </div>
 
-  <div class="display-area">
-    <div class="result" id="result">Make your choice!</div>
-  </div>
-
+  <div class="result" id="result">Make your choice!</div>
   <div class="display">
-    <div><strong>You:</strong> <span id="userChoice"> 💡 </span></div>
-    <div><strong>Computer:</strong> <span id="computerChoice"> 💡 </span></div>
+    <div><strong id="p1Label">You:</strong> <span id="userChoice">💡</span></div>
+    <div><strong id="p2Label">Opponent:</strong> <span id="computerChoice">💡</span></div>
   </div>
-			<h2 id="historyLabel" style="display: none;">Game History</h2>
-
-			<table id="resultTable" border="1" style="margin: auto; border-collapse: collapse; font-size: 1em; margin-top: 20px;">
-			<tbody>
-						<!-- Header + rows will be inserted dynamically -->
-			</tbody>
-			</table>
+  <div id="scoreBoard" style="margin-top:20px; font-size:1.2em; font-weight:bold;">
+  Score → You: 0 | Opponent: 0
+	</div>
 
 
-  <button class="reset-button" onclick="resetGame()">🔄 Reset Game</button>
-
-  <div class="final-message" id="finalMessage">
-    <div id="finalText"></div>
-    <span id="finalEmoji"></span>
-    <button onclick="restartGame()">🕹️ Play Again</button>
+  <!-- Name Popup -->
+  <div id="modePopup" style="display:none; position:fixed; top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);justify-content:center;align-items:center;z-index:9999;">
+    <div style="background:white;padding:20px;border-radius:10px;width:300px;text-align:center;">
+      <h2 id="popupTitle">Enter Player Name(s)</h2>
+      <div id="singleNameField" style="display:none;">
+        <label>Your Name: <input type="text" id="player1Name"></label>
+      </div>
+      <div id="multiNameFields" style="display:none;">
+        <label>Player Name: <input type="text" id="player1Multi" placeholder="Player 1"></label>
+      </div>
+      <br>
+      <button onclick="startGame()">Start Game</button>
+    </div>
   </div>
 
-  <button id="infoButton" onmouseover="showInfoBox()">❓</button>
-  <div id="infoBox">Click a choice to play. Game ends after 5 rounds. Highest scorer wins!</div>
+  <!-- Room Popup -->
+  <div id="roomPopup" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);justify-content:center;align-items:center;z-index:9999;">
+    <div style="background:white;padding:20px;border-radius:10px;width:300px;text-align:center;">
+      <h2>Room Options</h2>
+      <button onclick="createRoom()">Create Room</button><br><br>
+      <input type="text" id="joinRoomCode" placeholder="Enter Room Code"><br><br>
+      <button onclick="joinRoom()">Join Room</button>
+    </div>
+  </div>
 
-  <audio id="clickSound" src="https://www.soundjay.com/buttons/button-29.mp3"></audio>
-  <audio id="bgMusic" src="https://www.bensound.com/bensound-music/bensound-ukulele.mp3" loop autoplay></audio>
+  <!-- Firebase Multiplayer -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, doc, setDoc, getDoc, onSnapshot }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  <script>
-    let userScore = 0;
-    let compScore = 0;
-    let roundsPlayed = 0;
+    const firebaseConfig = {
+		apiKey: "AIzaSyDo96CpEy3DibNSkpCtmG-l32ItazMwd3k",
+		authDomain: "rock-paper-scissors-141.firebaseapp.com",
+		projectId: "rock-paper-scissors-141",
+		storageBucket: "rock-paper-scissors-141.firebasestorage.app",
+		messagingSenderId: "624543633003",
+		appId: "1:624543633003:web:5131ab56a85c809a6f2b2e",
+		measurementId: "G-5YX0PMMENS"
+  };
 
-    function play(userChoice) {
-      document.getElementById("clickSound").play();
-      const choices = ["rock", "paper", "scissors"];
-      const emojis = { rock: "✊", paper: "✋", scissors: "✌️" };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-      const computerChoice = choices[Math.floor(Math.random() * 3)];
-      document.getElementById("userChoice").textContent = emojis[userChoice];
-      document.getElementById("computerChoice").textContent = emojis[computerChoice];
+    window.roomId = null;
+    window.player1 = "Player";
+    window.myRole = null;
 
-      const result = getResult(userChoice, computerChoice);
-      const resultDiv = document.getElementById("result");
-      resultDiv.textContent = result;
-	  
-			const resultTable = document.getElementById("resultTable").getElementsByTagName("tbody")[0];
+    // Create Room
+    window.createRoom = async function () {
+      console.log("Creating room...");
+      const self = window.player1;
+      const roomRef = await addDoc(collection(db, "rooms"), {
+        player1Name: self,
+        player2Name: "",
+        p1Move: null,
+        p2Move: null,
+        round: 1,
+        status: "waiting",
+        createdAt: Date.now()
+      });
+      window.roomId = roomRef.id;
+      window.myRole = "p1";
+      alert(`Room created! Share this code with your friend: ${roomRef.id}`);
+      document.getElementById("roomPopup").style.display = "none";
+      updateLabels();
+      listenForMoves();
+    };
 
-						// If it's the first round, insert header row first
-						if (roundsPlayed === 0) {
-						  const headerRow = resultTable.insertRow();
-						  headerRow.style.backgroundColor = "#eee";
-						  headerRow.innerHTML = `
-							<th>Round</th>
-							<th>Your Choice</th>
-							<th>Computer's Choice</th>
-							<th>Result</th>
-					`;
-												}
+    // Join Room
+    window.joinRoom = async function () {
+      const code = document.getElementById("joinRoomCode").value.trim();
+      if (!code) return alert("Enter room code");
+      const roomRef = doc(db, "rooms", code);
+      const snap = await getDoc(roomRef);
+      if (!snap.exists()) return alert("Room not found!");
+      await setDoc(roomRef, { player2Name: window.player1 }, { merge: true });
+      window.roomId = code;
+      window.myRole = "p2";
+      alert(`Joined room ${code}`);
+      document.getElementById("roomPopup").style.display = "none";
+      updateLabels();
+      listenForMoves();
+    };
 
-						// Insert new round record
-						const newRow = resultTable.insertRow();
-						newRow.innerHTML = `
-						  <td>${roundsPlayed + 1}</td>
-						<td>${emojis[userChoice]}</td>
-						<td>${emojis[computerChoice]}</td>
-						<td>${result}</td>
+    // Listen for moves
+    // Listen for moves (Realtime sync)
+function listenForMoves() {
+  const roomRef = doc(db, "rooms", window.roomId);
+  onSnapshot(roomRef, async (snap) => {
+    if (!snap.exists()) return;
+    const data = snap.data();
+    console.log("Room update:", data);
 
-						`;
+    const emojiMap = { rock: "✊", paper: "✋", scissors: "✌️" };
 
-      if (result.includes("Win")) userScore++;
-      else if (result.includes("Lose")) compScore++;
+    if (data.p1Move && data.p2Move) {
+      // Both players made a choice → decide result
+      document.getElementById("userChoice").textContent =
+        window.myRole === "p1" ? emojiMap[data.p1Move] : emojiMap[data.p2Move];
+      document.getElementById("computerChoice").textContent =
+        window.myRole === "p1" ? emojiMap[data.p2Move] : emojiMap[data.p1Move];
 
+      const resultText = decideWinner(data.p1Move, data.p2Move, data.player1Name, data.player2Name);
+      document.getElementById("result").textContent = resultText;
+
+      
+	// Update scores (robust)
+	const outcome = getOutcome(data.p1Move, data.p2Move);
+	if (outcome === "p1") {
+	if (window.myRole === "p1") userScore++; else compScore++;
+	} 
+	else if (outcome === "p2")
+	{
+		if (window.myRole === "p2") userScore++; else compScore++;
+	}
       roundsPlayed++;
-      if (roundsPlayed >= 5) {
-        showFinalResult();
-      }
-    }
+      console.log(`Round ${roundsPlayed} completed`);
+	  updateScoreBoard();
 
-    function getResult(user, comp) {
-      if (user === comp) return "🤝 It's a Draw!";
-      if (
-        (user === "rock" && comp === "scissors") ||
-        (user === "scissors" && comp === "paper") ||
-        (user === "paper" && comp === "rock")
-      ) return "🎉 You Win!";
-      return "😞 You Lose!";
-    }
-
-    function resetGame() {
-      userScore = 0;
-      compScore = 0;
-      roundsPlayed = 0;
-      document.getElementById("userChoice").textContent = " 💡 ";
-      document.getElementById("computerChoice").textContent = " 💡 ";
-      document.getElementById("result").textContent = "Make your choice!";
-	  document.getElementById("resultTable").getElementsByTagName("tbody")[0].innerHTML = "";
+	if (roundsPlayed >= 5) {
+		showFinalResult();
+		} 
+		else {
+			if (window.myRole === "p1") {
+		await setDoc(roomRef, { p1Move: null, p2Move: null, round: (data.round || 1) + 1 }, { merge: true });
+				}
+		}
 
     }
+  });
+}
 
-    function showFinalResult() {
-      document.getElementById("buttonArea").style.display = "none";
-      document.querySelector(".reset-button").style.display = "none";
-      const finalBox = document.getElementById("finalMessage");
-      const finalText = document.getElementById("finalText");
-      const finalEmoji = document.getElementById("finalEmoji");
-      finalBox.style.display = "flex";
+// Helper: decide winner
+function decideWinner(p1, p2, name1, name2) {
+  if (p1 === p2) return "🤝 It's a Draw!";
+  if (
+    (p1 === "rock" && p2 === "scissors") ||
+    (p1 === "scissors" && p2 === "paper") ||
+    (p1 === "paper" && p2 === "rock")
+  ) {
+    return `🎉 ${name1} Wins!`;
+  }
+  return `🎉 ${name2} Wins!`;
+}
 
-      if (userScore > compScore) {
-        finalText.textContent = "🏆 You are the Winner!";
-        finalEmoji.textContent = "🎉 🏆 🎉";
-      } else if (userScore < compScore) {
-        finalText.textContent = "😢 You Lost the Game!";
-        finalEmoji.textContent = "😢💔😢";
+  </script>
+
+  <!-- Game Logic -->
+  <script>
+	let roundsPlayed = 0;
+	let userScore = 0;
+	let compScore = 0;
+
+    let gameMode = "";
+    function openModePopup(mode) {
+      gameMode = mode;
+      document.getElementById("modePopup").style.display = "flex";
+      if (mode === "multi") {
+        document.getElementById("singleNameField").style.display = "none";
+        document.getElementById("multiNameFields").style.display = "block";
       } else {
-        finalText.textContent = "⚖️ It's a Tie!";
-        finalEmoji.textContent = "🤝";
+        document.getElementById("singleNameField").style.display = "block";
+        document.getElementById("multiNameFields").style.display = "none";
       }
     }
-
-    function restartGame() {
-      document.getElementById("finalMessage").style.display = "none";
-      document.getElementById("buttonArea").style.display = "block";
-      document.querySelector(".reset-button").style.display = "inline-block";
-      resetGame();
-    }
-
-    function showInfoBox() {
-      document.getElementById("infoBox").style.display = "block";
-    }
-
-    document.addEventListener("click", (e) => {
-      const infoBox = document.getElementById("infoBox");
-      if (!e.target.matches("#infoButton")) {
-        infoBox.style.display = "none";
+    function startGame() {
+      if (gameMode === "single") {
+        window.player1 = document.getElementById("player1Name").value || "Player";
+        document.getElementById("modePopup").style.display = "none";
+      } else {
+        window.player1 = document.getElementById("player1Multi").value || "Player 1";
+        document.getElementById("modePopup").style.display = "none";
+        document.getElementById("roomPopup").style.display = "flex";
       }
+      updateLabels();
+    }
+    function updateLabels() {
+      document.getElementById("p1Label").textContent = window.player1 + ":";
+      document.getElementById("p2Label").textContent = "Opponent:";
+    }
+	function updateScoreBoard() {
+	document.getElementById("scoreBoard").textContent =
+    `Score → You: ${userScore} | Opponent: ${compScore}`;
+	}
+
+    async function play(choice) {
+  if (gameMode === "single") {
+    // --- Single Player ---
+    const choices = ["rock", "paper", "scissors"];
+    const comp = choices[Math.floor(Math.random() * 3)];
+    const emojiMap = { rock: "✊", paper: "✋", scissors: "✌️" };
+    document.getElementById("userChoice").textContent = emojiMap[choice];
+    document.getElementById("computerChoice").textContent = emojiMap[comp];
+   
+   const resultText = decideWinner(choice, comp, "You", "Computer");
+	document.getElementById("result").textContent = resultText;
+	
+	const outcome = getOutcome(choice, comp); // user = p1, computer = p2
+	if (outcome === "p1") userScore++;
+	else if (outcome === "p2") compScore++;
+
+	roundsPlayed++;
+	updateScoreBoard();
+	
+	if (roundsPlayed >= 5) {
+	showFinalResult();
+}
+
+
+
+  } else {
+    // --- Multiplayer ---
+    if (!window.roomId) {
+      alert("Please create or join a room first!");
+      return;
+    }
+
+    const roomRef = doc(db, "rooms", window.roomId);
+
+    if (window.myRole === "p1") {
+      await setDoc(roomRef, { p1Move: choice }, { merge: true });
+      console.log("You (P1) chose:", choice);
+    } else if (window.myRole === "p2") {
+      await setDoc(roomRef, { p2Move: choice }, { merge: true });
+      console.log("You (P2) chose:", choice);
+    }
+  }
+}
+	
+
+    function showInfoBox(){ document.getElementById("infoBox").style.display="block"; }
+    document.addEventListener("click", e => {
+      if (!e.target.matches("#infoButton")) document.getElementById("infoBox").style.display="none";
     });
   </script>
+  <script>
+function resetGame() {
+  // Reset scores & rounds
+  userScore = 0;
+  compScore = 0;
+  roundsPlayed = 0;
+
+  updateScoreBoard();
+
+  // Reset UI
+  document.getElementById("userChoice").textContent = "💡";
+  document.getElementById("computerChoice").textContent = "💡";
+  document.getElementById("result").textContent = "Make your choice!";
+
+  // Hide popup
+  document.getElementById("finalResultPopup").style.display = "none";
+}
+
+function getOutcome(p1, p2) {
+  if (p1 === p2) return "draw";
+  if (
+    (p1 === "rock" && p2 === "scissors") ||
+    (p1 === "scissors" && p2 === "paper") ||
+    (p1 === "paper" && p2 === "rock")
+  ) return "p1";
+  return "p2";
+}
+
+</script>
+
 </body>
 </html>
